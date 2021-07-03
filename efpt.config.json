@@ -1,0 +1,56 @@
+﻿{
+   "CodeGenerationMode": 0,
+   "ContextClassName": "Hs_LiveContext",
+   "ContextNamespace": null,
+   "DefaultDacpacSchema": null,
+   "FilterSchemas": false,
+   "IncludeConnectionString": true,
+   "ModelNamespace": null,
+   "OutputContextPath": "Data",
+   "OutputPath": null,
+   "ProjectRootNamespace": "ReportScheduler",
+   "Schemas": null,
+   "SelectedHandlebarsLanguage": 0,
+   "SelectedToBeGenerated": 0,
+   "Tables": [
+      {
+         "Name": "[dbo].[CompanyReport]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[CompanyReportColumnConfiguration]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[CompanyReportFilterConfiguration]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[ReportColumn]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[ReportDataSet]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[ReportFilter]",
+         "ObjectType": 0
+      }
+   ],
+   "UiHint": "DESKTOP-3GMQEAA\\SQLEXPRESS.1hs_live",
+   "UseBoolPropertiesWithoutDefaultSql": false,
+   "UseDatabaseNames": false,
+   "UseDbContextSplitting": false,
+   "UseFluentApiOnly": true,
+   "UseHandleBars": false,
+   "UseInflector": false,
+   "UseLegacyPluralizer": false,
+   "UseNoConstructor": false,
+   "UseNoNavigations": false,
+   "UseNoObjectFilter": false,
+   "UseNodaTime": false,
+   "UseNullableReferences": false,
+   "UseSchemaFolders": false,
+   "UseSpatial": false
+}
