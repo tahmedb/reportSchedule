@@ -37,9 +37,8 @@ namespace ReportScheduler.BackgroundJobs
             reports.ForEach(x =>
             {
 
-                int day = (int)DateTime.Now.DayOfWeek;
-                //RunJob(x);
-                _backgroundJobClient.Enqueue(() => RunJob(x));
+                int day = (int)DateTime.Now.DayOfWeek;                
+                //_backgroundJobClient.Enqueue(() => RunJob(x));
                 if (x.ScheduleDay == day)
                 {
                     if (x.ScheduleTime.Value.Hour == DateTime.Now.Hour && x.ScheduleTime.Value.Minute == 0)
@@ -100,7 +99,7 @@ namespace ReportScheduler.BackgroundJobs
                 }
 
                 byte[] bytes = Encoding.ASCII.GetBytes(sb.ToString());
-                _emailService.Send("mabbass@gmail.com", $"Scheduled report for company {companyReport.Name}", "Csv file is attached", bytes);
+                _emailService.Send("tahmedb@outlook.com", $"Scheduled report for company {companyReport.Name}", "Csv file is attached", bytes);
             }
             //else
             //{
