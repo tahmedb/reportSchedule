@@ -22,7 +22,7 @@ namespace ReportScheduler.BackgroundJobs
         private readonly IBackgroundJobClient _backgroundJobClient;
         private readonly ConnectionString _connectionString;
         private readonly IEmailService _emailService;
-        public ScheduledReports(Hs_LiveContext hs_LiveContext,IEmailService emailService, IOptions<ConnectionString> connectionString, ILogger<ScheduledReports> logger, IBackgroundJobClient backgroundJobClient)
+        public ScheduledReports(Hs_LiveContext hs_LiveContext, IEmailService emailService, IOptions<ConnectionString> connectionString, ILogger<ScheduledReports> logger, IBackgroundJobClient backgroundJobClient)
         {
             _hs_LiveContext = hs_LiveContext;
             _logger = logger;
@@ -38,6 +38,7 @@ namespace ReportScheduler.BackgroundJobs
             {
 
                 int day = (int)DateTime.Now.DayOfWeek;
+                //RunJob(x);
                 _backgroundJobClient.Enqueue(() => RunJob(x));
                 if (x.ScheduleDay == day)
                 {
@@ -56,47 +57,75 @@ namespace ReportScheduler.BackgroundJobs
             });
         }
 
-        private async Task<List<CompanyReport>> CompanyReportsAsync()
+        public async Task<List<CompanyReportDto>> CompanyReportsAsync()
         {
             return await _hs_LiveContext.CompanyReport
                 .Include(x => x.ReportDataSet)
                 .Include(x => x.CompanyReportColumnConfiguration)
-                .Include(x => x.CompanyReportFilterConfiguration).Where(x => x.IsSchedule).ToListAsync();
+                .Include(x => x.CompanyReportFilterConfiguration).Where(x => x.IsSchedule)
+                .Select(x => new CompanyReportDto
+                {
+                    Name = x.Name,
+                    Id = x.Id,
+                    ScheduleTime =x.ScheduleTime,
+                    ScheduleDay = x.ScheduleDay,
+                    ReportDataSetName = x.ReportDataSet.Name,
+                    CompanyReportColumnConfiguration = x.CompanyReportColumnConfiguration.Select(crc => new CompanyReportColumnConfigurationDto { Name = crc.DisplayName, Order = crc.DisplayOrder }),
+                    CompanyReportFilterConfiguration = x.CompanyReportFilterConfiguration.Select(crf => new CompanyReportFilterConfigurationDto
+                    {                        
+                        Operator = crf.Operator,
+                        Value = crf.Value
+                    }),
+                })
+                .ToListAsync();
         }
-        private void RunJob(CompanyReport companyReport)
+        public void RunJob(CompanyReportDto companyReport)
         {
-            string sqlQuery = $"select * from ${companyReport.ReportDataSet.Name}";
+            string sqlQuery = $"select * from {companyReport.ReportDataSetName}";
             var reportData = DataExecuteReturn(sqlQuery);
             StringBuilder sb = new StringBuilder();
-
-            foreach (DataColumn col in reportData.Tables[0].Columns)
+            if (reportData != null)
             {
-                sb.Append(string.Format("{0},", col.ColumnName));
-            }
-            foreach (DataRow row in reportData.Tables[0].Rows)
-            {
-                sb.AppendLine();
                 foreach (DataColumn col in reportData.Tables[0].Columns)
                 {
-                    sb.Append(string.Format("{0},", row[col.ColumnName]));
+                    sb.Append(string.Format("{0},", col.ColumnName));
                 }
+                foreach (DataRow row in reportData.Tables[0].Rows)
+                {
+                    sb.AppendLine();
+                    foreach (DataColumn col in reportData.Tables[0].Columns)
+                    {
+                        sb.Append(string.Format("{0},", row[col.ColumnName]));
+                    }
+                }
+
+                byte[] bytes = Encoding.ASCII.GetBytes(sb.ToString());
+                _emailService.Send("mabbass@gmail.com", $"Scheduled report for company {companyReport.Name}", "Csv file is attached", bytes);
             }
-
-            byte[] bytes = Encoding.ASCII.GetBytes(sb.ToString());
-            _emailService.Send("mabbass@gmail.com", $"Scheduled report for company ${companyReport.Name}", "Csv file is attached",bytes);
+            //else
+            //{
+            //    _emailService.Send("mabbass@gmail.com", $"Scheduled report for company ${companyReport.Name}. ", "Csv file is attached", bytes);
+            //}
         }
-        private DataSet DataExecuteReturn(string strSQL)
+        public DataSet DataExecuteReturn(string strSQL)
         {
+            try
+            {
+                SqlCommand oCommand = new SqlCommand(strSQL, new SqlConnection(_connectionString.database));
+                SqlDataAdapter oDataAdapter = new SqlDataAdapter(strSQL, _connectionString.database);
 
-            SqlCommand oCommand = new SqlCommand(strSQL, new SqlConnection(_connectionString.database));
-            SqlDataAdapter oDataAdapter = new SqlDataAdapter(strSQL, _connectionString.database);
+                oDataAdapter.SelectCommand.CommandTimeout = 1000;
 
-            oDataAdapter.SelectCommand.CommandTimeout = 1000;
+                DataSet oDataSet = new DataSet();
+                oDataAdapter.Fill(oDataSet);
 
-            DataSet oDataSet = new DataSet();
-            oDataAdapter.Fill(oDataSet);
-
-            return oDataSet;
+                return oDataSet;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex.Message);
+            }
+            return null;
         }
     }
 }

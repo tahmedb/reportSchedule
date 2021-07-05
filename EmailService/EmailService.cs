@@ -86,11 +86,11 @@ namespace ReportScheduler.EmailService
                     //client.ServerCertificateValidationCallback
                     if (_env.IsDevelopment())
                     {
-                        client.Connect(_smtpSettings.Server, _smtpSettings.Port, true);
+                        client.Connect(_smtpSettings.Server, _smtpSettings.Port, false) ;
                     }
                     else
                     {
-                        client.Connect(_smtpSettings.Server, _smtpSettings.Port);
+                        client.Connect(_smtpSettings.Server, _smtpSettings.Port,false);
                     }
                     client.Authenticate(_smtpSettings.Username, _smtpSettings.Password);
                     client.Send(email);
