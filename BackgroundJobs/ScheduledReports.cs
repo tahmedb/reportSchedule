@@ -36,8 +36,8 @@ namespace ReportScheduler.BackgroundJobs
             var reports = await CompanyReportsAsync();
             reports.ForEach(x =>
             {
-
-                int day = (int)DateTime.Now.DayOfWeek;                
+                int day = (int)DateTime.Now.DayOfWeek;
+                //if(x.Id == 7)
                 //_backgroundJobClient.Enqueue(() => RunJob(x));
                 if (x.ScheduleDay == day)
                 {
@@ -50,9 +50,7 @@ namespace ReportScheduler.BackgroundJobs
                         _backgroundJobClient.Schedule(() => RunJob(x), TimeSpan.FromMinutes(x.ScheduleTime.Value.Minute));
                     }
                 }
-
                 _logger.LogInformation(x.Name);
-
             });
         }
 
@@ -66,12 +64,12 @@ namespace ReportScheduler.BackgroundJobs
                 {
                     Name = x.Name,
                     Id = x.Id,
-                    ScheduleTime =x.ScheduleTime,
+                    ScheduleTime = x.ScheduleTime,
                     ScheduleDay = x.ScheduleDay,
                     ReportDataSetName = x.ReportDataSet.Name,
                     CompanyReportColumnConfiguration = x.CompanyReportColumnConfiguration.Select(crc => new CompanyReportColumnConfigurationDto { Name = crc.DisplayName, Order = crc.DisplayOrder }),
                     CompanyReportFilterConfiguration = x.CompanyReportFilterConfiguration.Select(crf => new CompanyReportFilterConfigurationDto
-                    {                        
+                    {
                         Operator = crf.Operator,
                         Value = crf.Value
                     }),
@@ -80,8 +78,8 @@ namespace ReportScheduler.BackgroundJobs
         }
         public void RunJob(CompanyReportDto companyReport)
         {
-            string sqlQuery = $"select * from {companyReport.ReportDataSetName}";
-            var reportData = DataExecuteReturn(sqlQuery);
+            string sqlQuery = $"spGenerateCustomReport";
+            var reportData = DataExecuteReturn(sqlQuery,companyReport.Id);
             StringBuilder sb = new StringBuilder();
             if (reportData != null)
             {
@@ -106,18 +104,24 @@ namespace ReportScheduler.BackgroundJobs
             //    _emailService.Send("mabbass@gmail.com", $"Scheduled report for company ${companyReport.Name}. ", "Csv file is attached", bytes);
             //}
         }
-        public DataSet DataExecuteReturn(string strSQL)
+        public DataSet DataExecuteReturn(string strSQL, int companyReportId)
         {
             try
             {
-                SqlCommand oCommand = new SqlCommand(strSQL, new SqlConnection(_connectionString.database));
-                SqlDataAdapter oDataAdapter = new SqlDataAdapter(strSQL, _connectionString.database);
-
-                oDataAdapter.SelectCommand.CommandTimeout = 1000;
-
                 DataSet oDataSet = new DataSet();
-                oDataAdapter.Fill(oDataSet);
+                SqlDataAdapter dap = new SqlDataAdapter();
+                SqlCommand oCommand = new SqlCommand(strSQL, new SqlConnection(_connectionString.database));
+                oCommand.CommandType = CommandType.StoredProcedure;
+                DataTable oT = new DataTable();
 
+                oCommand.Parameters.AddWithValue("@CompanyReportId", companyReportId);
+
+                oCommand.Connection.Open();
+                dap.SelectCommand = oCommand;
+                dap.Fill(oT);
+                oCommand.Dispose();
+                oT = oT.DefaultView.ToTable();
+                oDataSet.Tables.Add(oT);
                 return oDataSet;
             }
             catch (Exception ex)
