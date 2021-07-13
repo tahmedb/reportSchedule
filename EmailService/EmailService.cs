@@ -62,7 +62,7 @@ namespace ReportScheduler.EmailService
                 }
             }catch(Exception error)
             {
-                _logger.LogInformation(error.Message);
+                _logger.LogError(error.Message);
             }
         }
 
@@ -95,11 +95,12 @@ namespace ReportScheduler.EmailService
                     client.Authenticate(_smtpSettings.Username, _smtpSettings.Password);
                     client.Send(email);
                     client.Disconnect(true);
+                    _logger.LogInformation($"Email sent to {to}");
                 }
             }
             catch (Exception error)
             {
-                _logger.LogInformation(error.Message);
+                _logger.LogError(error.Message);
             }
         }
     }
