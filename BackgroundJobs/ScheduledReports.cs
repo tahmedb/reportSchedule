@@ -45,7 +45,7 @@ namespace ReportScheduler.BackgroundJobs
                     {
                         _backgroundJobClient.Enqueue(() => RunJob(x));
                     }
-                    else if (x.ScheduleTime.Value.Hour == DateTime.Now.Hour && x.ScheduleTime.Value.Minute == 0)
+                    else if (x.ScheduleTime.Value.Hour == DateTime.Now.Hour && x.ScheduleTime.Value.Minute == 30)
                     {
                         _backgroundJobClient.Schedule(() => RunJob(x), TimeSpan.FromMinutes(x.ScheduleTime.Value.Minute));
                     }
@@ -57,27 +57,31 @@ namespace ReportScheduler.BackgroundJobs
         public async Task<List<CompanyReportDto>> CompanyReportsAsync()
         {
             return await _hs_LiveContext.CompanyReport
-                .Include(x => x.ReportDataSet)
-                .Include(x => x.CompanyReportColumnConfiguration)
-                .Include(x => x.CompanyReportFilterConfiguration).Where(x => x.IsSchedule)
+                //.Include(x => x.ReportDataSet)
+                //.Include(x => x.CompanyReportColumnConfiguration)
+                //.Include(x => x.CompanyReportFilterConfiguration)
+                .Where(x => x.IsSchedule)
                 .Select(x => new CompanyReportDto
                 {
                     Name = x.Name,
+                    Email = x.Email,
                     Id = x.Id,
+                    IsSchedule = x.IsSchedule,
                     ScheduleTime = x.ScheduleTime,
                     ScheduleDay = x.ScheduleDay,
-                    ReportDataSetName = x.ReportDataSet.Name,
-                    CompanyReportColumnConfiguration = x.CompanyReportColumnConfiguration.Select(crc => new CompanyReportColumnConfigurationDto { Name = crc.DisplayName, Order = crc.DisplayOrder }),
-                    CompanyReportFilterConfiguration = x.CompanyReportFilterConfiguration.Select(crf => new CompanyReportFilterConfigurationDto
-                    {
-                        Operator = crf.Operator,
-                        Value = crf.Value
-                    }),
+                    //ReportDataSetName = x.ReportDataSet.Name,
+                    //CompanyReportColumnConfiguration = x.CompanyReportColumnConfiguration.Select(crc => new CompanyReportColumnConfigurationDto { Name = crc.DisplayName, Order = crc.DisplayOrder }),
+                    //CompanyReportFilterConfiguration = x.CompanyReportFilterConfiguration.Select(crf => new CompanyReportFilterConfigurationDto
+                    //{
+                    //    Operator = crf.Operator,
+                    //    Value = crf.Value
+                    //}),
                 })
                 .ToListAsync();
         }
         public void RunJob(CompanyReportDto companyReport)
         {
+            var report = _hs_LiveContext.CompanyReport.Find(companyReport.Id);
             string sqlQuery = $"spGenerateCustomReport";
             var reportData = DataExecuteReturn(sqlQuery,companyReport.Id);
             StringBuilder sb = new StringBuilder();
@@ -97,12 +101,8 @@ namespace ReportScheduler.BackgroundJobs
                 }
 
                 byte[] bytes = Encoding.ASCII.GetBytes(sb.ToString());
-                _emailService.Send("tahmedb@outlook.com", $"Scheduled report for company {companyReport.Name}", "Csv file is attached", bytes);
+                _emailService.Send(report.Email, $"Scheduled report for company {report.Name}", "Csv file is attached", bytes);
             }
-            //else
-            //{
-            //    _emailService.Send("mabbass@gmail.com", $"Scheduled report for company ${companyReport.Name}. ", "Csv file is attached", bytes);
-            //}
         }
         public DataSet DataExecuteReturn(string strSQL, int companyReportId)
         {

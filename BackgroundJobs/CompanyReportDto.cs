@@ -12,5 +12,7 @@ namespace ReportScheduler.BackgroundJobs
         public IEnumerable<CompanyReportFilterConfigurationDto> CompanyReportFilterConfiguration { get; internal set; }
         public DateTime? ScheduleTime { get; internal set; }
         public int? ScheduleDay { get; internal set; }
+        public string Email { get; internal set; }
+        public bool IsSchedule { get; internal set; }
     }
 }

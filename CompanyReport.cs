@@ -18,6 +18,7 @@ namespace ReportScheduler
         public int ReportDataSetId { get; set; }
         public int CompanyId { get; set; }
         public string Name { get; set; }
+        public string Email { get; set; }
         public string Description { get; set; }
         public bool IsSchedule { get; set; }
         public int? ScheduleDay { get; set; }
